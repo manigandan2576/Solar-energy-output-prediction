@@ -148,6 +148,54 @@ def build_array_daily_dataset() -> pd.DataFrame:
     return _add_problem_features(daily)
 
 
+def identify_damaged_panels(daily: pd.DataFrame) -> pd.DataFrame:
+    """Return the most recent array-level panel flags that look damaged."""
+    required_columns = [
+        "plant_id",
+        "array_id",
+        "date",
+        "maintenance_flag",
+        "maintenance_priority_score",
+        "daily_output_kwh",
+        "solar_irradiance",
+    ]
+    missing = [name for name in required_columns if name not in daily.columns]
+    if missing:
+        raise ValueError(f"Missing required columns for damage detection: {missing}")
+
+    flagged = daily.loc[daily["maintenance_flag"] == 1, required_columns].copy()
+    if flagged.empty:
+        return pd.DataFrame(
+            columns=[
+                "plant_id",
+                "array_id",
+                "last_detected_date",
+                "maintenance_priority_score",
+                "daily_output_kwh",
+                "solar_irradiance",
+                "issue",
+            ]
+        )
+
+    flagged["date"] = pd.to_datetime(flagged["date"])
+    flagged = flagged.sort_values(["plant_id", "array_id", "date"], ascending=[True, True, False])
+    latest = flagged.drop_duplicates(subset=["plant_id", "array_id"], keep="first").copy()
+    latest = latest.rename(columns={"date": "last_detected_date"})
+    latest["issue"] = "Likely damaged panel"
+    latest["maintenance_priority_score"] = latest["maintenance_priority_score"].clip(lower=0, upper=100)
+    return latest[
+        [
+            "plant_id",
+            "array_id",
+            "last_detected_date",
+            "maintenance_priority_score",
+            "daily_output_kwh",
+            "solar_irradiance",
+            "issue",
+        ]
+    ].reset_index(drop=True)
+
+
 def build_daily_dataset() -> pd.DataFrame:
     """Backward-compatible alias for older scripts."""
     return build_array_daily_dataset()

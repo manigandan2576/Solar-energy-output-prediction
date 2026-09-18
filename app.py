@@ -16,7 +16,7 @@ OUTPUT_DIR = ROOT / "outputs"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from prepare_data import build_array_daily_dataset  # noqa: E402
+from prepare_data import build_array_daily_dataset, identify_damaged_panels  # noqa: E402
 from predict import MODEL_NAMES, make_predictions  # noqa: E402
 from train_model import FEATURES, METRICS_PATH, train_models  # noqa: E402
 
@@ -32,6 +32,11 @@ st.set_page_config(
 @st.cache_data(show_spinner=False)
 def load_daily_data() -> pd.DataFrame:
     return build_array_daily_dataset()
+
+
+@st.cache_data(show_spinner=False, ttl=30)
+def load_damaged_panels() -> pd.DataFrame:
+    return identify_damaged_panels(load_daily_data())
 
 
 @st.cache_data(show_spinner=False, ttl=30)
@@ -125,6 +130,7 @@ daily = load_daily_data()
 metrics = load_metrics()
 models = load_models()
 submission = load_submission()
+damaged_panels = load_damaged_panels()
 best_model_name = str(metrics.sort_values("rmse").iloc[0]["model"])
 
 with st.sidebar:
@@ -305,6 +311,33 @@ with st.container(horizontal=True):
         f"{selected_plant} | {selected_array}",
         border=True,
     )
+
+selected_damage = damaged_panels[
+    (damaged_panels["plant_id"] == selected_plant) & (damaged_panels["array_id"] == selected_array)
+]
+
+with st.container(border=True):
+    st.subheader("Panel health check")
+    if selected_damage.empty:
+        st.success(f"No likely damaged panel detected for Plant {selected_plant} | Array {selected_array}.")
+    else:
+        damaged_row = selected_damage.iloc[0]
+        st.warning(
+            "Likely damaged panel detected: "
+            f"Plant {selected_plant} | Array {selected_array} | "
+            f"Last flagged {pd.to_datetime(damaged_row['last_detected_date']).strftime('%Y-%m-%d')} | "
+            f"Priority score {float(damaged_row['maintenance_priority_score']):.0f}/100"
+        )
+
+with st.container(border=True):
+    st.subheader("Damaged panels detected")
+    if damaged_panels.empty:
+        st.info("No damaged panel has been detected in the current dataset.")
+    else:
+        display_damaged = damaged_panels.copy()
+        display_damaged["last_detected_date"] = pd.to_datetime(display_damaged["last_detected_date"]).dt.strftime("%Y-%m-%d")
+        display_damaged["maintenance_priority_score"] = display_damaged["maintenance_priority_score"].round(1)
+        st.dataframe(display_damaged, hide_index=True)
 
 left, right = st.columns(2)
 with left:
