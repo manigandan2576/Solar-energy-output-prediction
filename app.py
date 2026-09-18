@@ -31,7 +31,12 @@ st.set_page_config(
 
 @st.cache_data(show_spinner=False)
 def load_daily_data() -> pd.DataFrame:
-    return build_array_daily_dataset()
+    daily = build_array_daily_dataset()
+    if "panel_id" not in daily.columns and "plant_id" in daily.columns:
+        daily = daily.rename(columns={"plant_id": "panel_id"})
+    if "panel_number" not in daily.columns and "plant_number" in daily.columns:
+        daily = daily.rename(columns={"plant_number": "panel_number"})
+    return daily
 
 
 @st.cache_data(show_spinner=False, ttl=30)

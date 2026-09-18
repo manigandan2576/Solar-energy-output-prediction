@@ -62,7 +62,17 @@ def load_panel_data(panel_number: int) -> pd.DataFrame:
     return merged
 
 
+def _normalize_panel_columns(daily: pd.DataFrame) -> pd.DataFrame:
+    """Keep compatibility with both older plant-based names and the newer panel-based schema."""
+    if "panel_id" not in daily.columns and "plant_id" in daily.columns:
+        daily = daily.rename(columns={"plant_id": "panel_id"})
+    if "panel_number" not in daily.columns and "plant_number" in daily.columns:
+        daily = daily.rename(columns={"plant_number": "panel_number"})
+    return daily
+
+
 def _add_problem_features(daily: pd.DataFrame) -> pd.DataFrame:
+    daily = _normalize_panel_columns(daily)
     array_keys = ["panel_id", "array_id"]
     daily = daily.sort_values([*array_keys, "date"]).reset_index(drop=True)
 
@@ -145,11 +155,13 @@ def build_array_daily_dataset() -> pd.DataFrame:
         .rename(columns={"PLANT_ID": "panel_id", "SOURCE_KEY": "array_id"})
     )
 
+    daily = _normalize_panel_columns(daily)
     return _add_problem_features(daily)
 
 
 def identify_damaged_panels(daily: pd.DataFrame) -> pd.DataFrame:
     """Return the most recent array-level panel flags that look damaged."""
+    daily = _normalize_panel_columns(daily.copy())
     required_columns = [
         "panel_id",
         "array_id",
