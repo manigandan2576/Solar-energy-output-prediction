@@ -1,29 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Solar panel square logo">
-  <rect width="512" height="512" rx="40" fill="#f2f8ff"/>
-  <rect x="54" y="54" width="404" height="404" rx="26" fill="#0f172a"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="420" viewBox="0 0 600 420" role="img" aria-label="The Sun solar energy logo">
+  <rect width="600" height="420" fill="#f4f4f4"/>
 
-  <circle cx="256" cy="182" r="64" fill="#f4b942"/>
-  <g stroke="#f4b942" stroke-width="8" stroke-linecap="round">
-    <line x1="256" y1="74" x2="256" y2="108"/>
-    <line x1="256" y1="256" x2="256" y2="290"/>
-    <line x1="148" y1="182" x2="182" y2="182"/>
-    <line x1="330" y1="182" x2="364" y2="182"/>
-    <line x1="182" y1="106" x2="200" y2="124"/>
-    <line x1="312" y1="236" x2="330" y2="254"/>
-    <line x1="182" y1="258" x2="200" y2="240"/>
-    <line x1="312" y1="128" x2="330" y2="110"/>
+  <g transform="translate(90 90)">
+    <circle cx="110" cy="110" r="96" fill="#f4b64d"/>
+
+    <g stroke="#f4b64d" stroke-width="6" stroke-linecap="round" opacity="0.9">
+      <line x1="110" y1="10" x2="110" y2="36"/>
+      <line x1="110" y1="210" x2="110" y2="236"/>
+      <line x1="10" y1="110" x2="36" y2="110"/>
+      <line x1="210" y1="110" x2="236" y2="110"/>
+      <line x1="38" y1="38" x2="56" y2="56"/>
+      <line x1="182" y1="182" x2="200" y2="200"/>
+      <line x1="38" y1="182" x2="56" y2="164"/>
+      <line x1="182" y1="38" x2="200" y2="56"/>
+    </g>
+
+    <g fill="#f4b64d">
+      <path d="M68 76h84v30H68z" opacity="0.18"/>
+      <path d="M68 156h84v30H68z" opacity="0.18"/>
+      <path d="M72 112h82v20H72z" opacity="0.12"/>
+    </g>
+
+    <g transform="translate(60 92)">
+      <path d="M32 4h18c22 0 40 18 40 40v12h-20V44c0-11-9-20-20-20H32V4zm-22 44h15v40c0 14 11 25 25 25h12v18H42c-24 0-42-18-42-42V48h10v0z" fill="#f4f4f4"/>
+      <path d="M42 78h20v62H42z" fill="#f4f4f4"/>
+      <path d="M34 144h36v18H34z" fill="#f4f4f4"/>
+    </g>
   </g>
 
-  <g transform="translate(130 270)">
-    <rect x="0" y="0" width="252" height="132" rx="18" fill="#1d4ed8"/>
-    <g stroke="#dbeafe" stroke-width="6">
-      <line x1="36" y1="0" x2="36" y2="132"/>
-      <line x1="86" y1="0" x2="86" y2="132"/>
-      <line x1="136" y1="0" x2="136" y2="132"/>
-      <line x1="186" y1="0" x2="186" y2="132"/>
-      <line x1="236" y1="0" x2="236" y2="132"/>
-      <line x1="0" y1="40" x2="252" y2="40"/>
-      <line x1="0" y1="82" x2="252" y2="82"/>
-    </g>
+  <g transform="translate(260 128)">
+    <text x="0" y="72" font-family="Segoe UI, Arial, sans-serif" font-size="64" font-weight="300" fill="#2d2d2d" letter-spacing="3">THE SUN</text>
+    <text x="4" y="128" font-family="Segoe UI, Arial, sans-serif" font-size="32" font-weight="500" fill="#f4b64d" letter-spacing="2">solar energy</text>
   </g>
 </svg>
