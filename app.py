@@ -52,26 +52,61 @@ def load_metrics() -> pd.DataFrame:
 
 
 @st.cache_resource(show_spinner=False)
+def normalize_prediction_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    normalized = frame.copy()
+    if "panel_id" in normalized.columns and "plant_id" not in normalized.columns:
+        normalized["plant_id"] = normalized["panel_id"]
+    if "plant_id" in normalized.columns and "panel_id" not in normalized.columns:
+        normalized["panel_id"] = normalized["plant_id"]
+    if "panel_number" in normalized.columns and "plant_number" not in normalized.columns:
+        normalized["plant_number"] = normalized["panel_number"]
+    if "plant_number" in normalized.columns and "panel_number" not in normalized.columns:
+        normalized["panel_number"] = normalized["plant_number"]
+    return normalized
+
+
+@st.cache_resource(show_spinner=False)
 def load_models() -> dict[str, dict]:
     missing = [name for name in MODEL_NAMES if not (MODELS_DIR / f"{name}.joblib").exists()]
     if missing:
         train_models()
-    return {name: joblib.load(MODELS_DIR / f"{name}.joblib") for name in MODEL_NAMES}
+
+    models = {name: joblib.load(MODELS_DIR / f"{name}.joblib") for name in MODEL_NAMES}
+    stale = any(
+        "plant_id" in artifact.get("features", []) or "plant_number" in artifact.get("features", [])
+        for artifact in models.values()
+    )
+    if stale:
+        train_models()
+        models = {name: joblib.load(MODELS_DIR / f"{name}.joblib") for name in MODEL_NAMES}
+    return models
 
 
 def load_submission() -> pd.DataFrame:
     submission_path = OUTPUT_DIR / "submission.csv"
     if not submission_path.exists():
-        make_predictions().to_csv(submission_path, index=False)
-    return pd.read_csv(submission_path)
+        submission = make_predictions()
+        submission.to_csv(submission_path, index=False)
+        return submission
+
+    submission = pd.read_csv(submission_path)
+    if "panel_id" not in submission.columns and "plant_id" in submission.columns:
+        submission = submission.rename(columns={"plant_id": "panel_id"})
+    if "panel_number" not in submission.columns and "plant_number" in submission.columns:
+        submission = submission.rename(columns={"plant_number": "panel_number"})
+    if {"panel_id", "array_id"}.difference(submission.columns):
+        submission = make_predictions()
+        submission.to_csv(submission_path, index=False)
+    return submission
 
 
 def predict_one(row: pd.Series, models: dict[str, dict], model_choice: str) -> dict[str, float]:
-    frame = pd.DataFrame([row])
-    predictions = {
-        name: float(artifact["model"].predict(frame[artifact.get("features", FEATURES)])[0])
-        for name, artifact in models.items()
-    }
+    frame = normalize_prediction_frame(pd.DataFrame([row]))
+    predictions = {}
+    for name, artifact in models.items():
+        model_features = artifact.get("features", FEATURES)
+        model_frame = frame.reindex(columns=model_features)
+        predictions[name] = float(artifact["model"].predict(model_frame)[0])
     predictions = {name: max(0.0, value) for name, value in predictions.items()}
     if model_choice == "average":
         predictions["average"] = sum(predictions[name] for name in ENSEMBLE_MODEL_NAMES) / len(

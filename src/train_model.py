@@ -64,9 +64,18 @@ NUMERIC_FEATURES = [
 FEATURES = CATEGORICAL_FEATURES + NUMERIC_FEATURES
 
 
+def _ensure_panel_compatibility_columns(data: pd.DataFrame) -> pd.DataFrame:
+    normalized = data.copy()
+    if "panel_id" in normalized.columns and "plant_id" not in normalized.columns:
+        normalized["plant_id"] = normalized["panel_id"]
+    if "panel_number" in normalized.columns and "plant_number" not in normalized.columns:
+        normalized["plant_number"] = normalized["panel_number"]
+    return normalized
+
+
 def load_training_data() -> pd.DataFrame:
     OUTPUT_DIR.mkdir(exist_ok=True)
-    data = build_array_daily_dataset()
+    data = _ensure_panel_compatibility_columns(build_array_daily_dataset())
     data.to_csv(PREPARED_DATA_PATH, index=False)
     return data
 
