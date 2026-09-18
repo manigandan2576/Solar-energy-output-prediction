@@ -2,7 +2,7 @@ Solar Energy Output Prediction
 ==============================
 
 This project forecasts next-day solar energy output in kWh for each panel array.
-It uses the four supplied panel CSV files, merges generation readings with
+It uses the four supplied plant CSV files, merges generation readings with
 weather sensor readings, creates an array-date training table, trains regression
 models, and serves an interactive Streamlit predictor.
 

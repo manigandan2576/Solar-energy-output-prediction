@@ -28,9 +28,9 @@ st.set_page_config(
     layout="wide",
 )
 
-LOGO_PATH = ROOT / "assets" / "solar_logo_square.svg"
+LOGO_PATH = ROOT / "assets" / "preview_image20210130-28972-w6gun5.png"
 if LOGO_PATH.exists():
-    st.image(str(LOGO_PATH), width=220)
+    st.image(str(LOGO_PATH), width=420)
 
 
 @st.cache_data(show_spinner=False)
