@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import sys
 from pathlib import Path
 
@@ -30,7 +31,31 @@ st.set_page_config(
 
 LOGO_PATH = ROOT / "assets" / "preview_image20210130-28972-w6gun5.png"
 if LOGO_PATH.exists():
-    st.image(str(LOGO_PATH), width=420)
+    logo_data = base64.b64encode(LOGO_PATH.read_bytes()).decode("utf-8")
+    st.markdown(
+        f"""
+        <style>
+        .logo-shell {{
+            display: flex;
+            justify-content: flex-start;
+            margin: 0 0 0.5rem 0;
+        }}
+        .logo-shell img {{
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.18);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            background: white;
+        }}
+        </style>
+        <div class="logo-shell">
+            <img src="data:image/png;base64,{logo_data}" alt="Solar panel logo" />
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 @st.cache_data(show_spinner=False)
