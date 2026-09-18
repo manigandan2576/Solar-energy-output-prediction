@@ -20,12 +20,26 @@ SUBMISSION_PATH = OUTPUT_DIR / "submission.csv"
 MODEL_NAMES = ["random_forest", "gradient_boosting", "ridge_regression"]
 
 
+def _normalize_panel_columns(frame: pd.DataFrame) -> pd.DataFrame:
+    normalized = frame.copy()
+    if "panel_id" not in normalized.columns and "plant_id" in normalized.columns:
+        normalized = normalized.rename(columns={"plant_id": "panel_id"})
+    if "panel_number" not in normalized.columns and "plant_number" in normalized.columns:
+        normalized = normalized.rename(columns={"plant_number": "panel_number"})
+    return normalized
+
+
 def _load_model(name: str):
     model_path = MODELS_DIR / f"{name}.joblib"
     if not model_path.exists():
         train_models()
     artifact = joblib.load(model_path)
-    return artifact["model"], artifact.get("features", FEATURES)
+    features = artifact.get("features", FEATURES)
+    if "plant_id" in features or "plant_number" in features:
+        train_models()
+        artifact = joblib.load(model_path)
+        features = artifact.get("features", FEATURES)
+    return artifact["model"], features
 
 
 def _best_model_name() -> str:
@@ -38,7 +52,7 @@ def _best_model_name() -> str:
 
 def make_predictions() -> pd.DataFrame:
     OUTPUT_DIR.mkdir(exist_ok=True)
-    daily = build_array_daily_dataset().sort_values(["panel_id", "array_id", "date"])
+    daily = _normalize_panel_columns(build_array_daily_dataset()).sort_values(["panel_id", "array_id", "date"])
     latest_rows = daily.groupby(["panel_id", "array_id"], as_index=False).tail(1).copy()
     latest_rows["prediction_date"] = latest_rows["date"] + pd.Timedelta(days=1)
     latest_rows["day_of_year"] = latest_rows["prediction_date"].dt.dayofyear
