@@ -28,6 +28,10 @@ st.set_page_config(
     layout="wide",
 )
 
+LOGO_PATH = ROOT / "assets" / "solar_logo.svg"
+if LOGO_PATH.exists():
+    st.image(str(LOGO_PATH), width=260)
+
 
 @st.cache_data(show_spinner=False)
 def load_daily_data() -> pd.DataFrame:
