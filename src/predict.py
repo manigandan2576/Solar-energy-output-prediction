@@ -38,8 +38,8 @@ def _best_model_name() -> str:
 
 def make_predictions() -> pd.DataFrame:
     OUTPUT_DIR.mkdir(exist_ok=True)
-    daily = build_array_daily_dataset().sort_values(["plant_id", "array_id", "date"])
-    latest_rows = daily.groupby(["plant_id", "array_id"], as_index=False).tail(1).copy()
+    daily = build_array_daily_dataset().sort_values(["panel_id", "array_id", "date"])
+    latest_rows = daily.groupby(["panel_id", "array_id"], as_index=False).tail(1).copy()
     latest_rows["prediction_date"] = latest_rows["date"] + pd.Timedelta(days=1)
     latest_rows["day_of_year"] = latest_rows["prediction_date"].dt.dayofyear
     latest_rows["month"] = latest_rows["prediction_date"].dt.month
@@ -48,9 +48,8 @@ def make_predictions() -> pd.DataFrame:
 
     output = latest_rows[
         [
-            "plant_id",
             "panel_id",
-            "plant_number",
+            "panel_number",
             "array_id",
             "prediction_date",
             "daily_output_kwh",
@@ -76,7 +75,6 @@ def make_predictions() -> pd.DataFrame:
     output["selected_model"] = best_model
     output["predicted_next_day_output_kwh"] = output[f"{best_model}_prediction_kwh"]
     output["prediction_date"] = output["prediction_date"].dt.strftime("%Y-%m-%d")
-    output["panel_id"] = output["plant_id"]
     return output.sort_values(["panel_id", "array_id"]).reset_index(drop=True)
 
 

@@ -39,10 +39,10 @@ def _parse_date_time(series: pd.Series) -> pd.Series:
     return parsed
 
 
-def load_plant_data(plant_number: int) -> pd.DataFrame:
-    """Read and merge generation with plant-level weather sensor readings."""
-    generation = _read_csv(DATA_DIR / GENERATION_FILES[plant_number])
-    weather = _read_csv(DATA_DIR / WEATHER_FILES[plant_number])
+def load_panel_data(panel_number: int) -> pd.DataFrame:
+    """Read and merge generation with panel-level weather sensor readings."""
+    generation = _read_csv(DATA_DIR / GENERATION_FILES[panel_number])
+    weather = _read_csv(DATA_DIR / WEATHER_FILES[panel_number])
 
     generation["DATE_TIME"] = _parse_date_time(generation["DATE_TIME"])
     weather["DATE_TIME"] = _parse_date_time(weather["DATE_TIME"])
@@ -57,13 +57,13 @@ def load_plant_data(plant_number: int) -> pd.DataFrame:
         how="left",
         validate="many_to_one",
     )
-    merged["plant_number"] = plant_number
+    merged["panel_number"] = panel_number
     merged["date"] = merged["DATE_TIME"].dt.normalize()
     return merged
 
 
 def _add_problem_features(daily: pd.DataFrame) -> pd.DataFrame:
-    array_keys = ["plant_id", "array_id"]
+    array_keys = ["panel_id", "array_id"]
     daily = daily.sort_values([*array_keys, "date"]).reset_index(drop=True)
 
     daily["prior_day_output_kwh"] = daily.groupby(array_keys)["daily_output_kwh"].shift(1)
@@ -120,12 +120,12 @@ def _add_problem_features(daily: pd.DataFrame) -> pd.DataFrame:
 def build_array_daily_dataset() -> pd.DataFrame:
     """Create one training row per panel array per date."""
     merged = pd.concat(
-        [load_plant_data(plant_number) for plant_number in GENERATION_FILES],
+        [load_panel_data(panel_number) for panel_number in GENERATION_FILES],
         ignore_index=True,
     )
 
     daily = (
-        merged.groupby(["PLANT_ID", "plant_number", "SOURCE_KEY", "date"], as_index=False)
+        merged.groupby(["PLANT_ID", "panel_number", "SOURCE_KEY", "date"], as_index=False)
         .agg(
             daily_output_kwh=("DAILY_YIELD", "max"),
             dc_power_mean=("DC_POWER", "mean"),
@@ -142,18 +142,16 @@ def build_array_daily_dataset() -> pd.DataFrame:
             daylight_hours=("IRRADIATION", lambda value: float(value.gt(0).sum() * 0.25)),
             generation_readings=("DATE_TIME", "count"),
         )
-        .rename(columns={"PLANT_ID": "plant_id", "SOURCE_KEY": "array_id"})
+        .rename(columns={"PLANT_ID": "panel_id", "SOURCE_KEY": "array_id"})
     )
-    daily["panel_id"] = daily["plant_id"]
 
     return _add_problem_features(daily)
 
 
 def identify_damaged_panels(daily: pd.DataFrame) -> pd.DataFrame:
     """Return the most recent array-level panel flags that look damaged."""
-    identifier_name = "panel_id" if "panel_id" in daily.columns else "plant_id"
     required_columns = [
-        identifier_name,
+        "panel_id",
         "array_id",
         "date",
         "maintenance_flag",
@@ -180,11 +178,9 @@ def identify_damaged_panels(daily: pd.DataFrame) -> pd.DataFrame:
         )
 
     flagged["date"] = pd.to_datetime(flagged["date"])
-    flagged = flagged.sort_values([identifier_name, "array_id", "date"], ascending=[True, True, False])
-    latest = flagged.drop_duplicates(subset=[identifier_name, "array_id"], keep="first").copy()
+    flagged = flagged.sort_values(["panel_id", "array_id", "date"], ascending=[True, True, False])
+    latest = flagged.drop_duplicates(subset=["panel_id", "array_id"], keep="first").copy()
     latest = latest.rename(columns={"date": "last_detected_date"})
-    if "plant_id" in latest.columns and "panel_id" not in latest.columns:
-        latest = latest.rename(columns={"plant_id": "panel_id"})
     latest["issue"] = "Likely damaged panel"
     latest["maintenance_priority_score"] = latest["maintenance_priority_score"].clip(lower=0, upper=100)
     return latest[

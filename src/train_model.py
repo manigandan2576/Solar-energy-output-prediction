@@ -27,9 +27,9 @@ METRICS_PATH = OUTPUT_DIR / "model_metrics.csv"
 
 TARGET = "next_day_output_kwh"
 
-CATEGORICAL_FEATURES = ["plant_id", "array_id"]
+CATEGORICAL_FEATURES = ["panel_id", "array_id"]
 NUMERIC_FEATURES = [
-    "plant_number",
+    "panel_number",
     "daily_output_kwh",
     "dc_power_mean",
     "dc_power_max",
@@ -168,7 +168,7 @@ def train_models() -> tuple[dict[str, Pipeline], pd.DataFrame]:
     data = load_training_data()
     trainable = (
         data.dropna(subset=[TARGET, "prior_day_output_kwh"])
-        .sort_values(["date", "plant_id", "array_id"])
+        .sort_values(["date", "panel_id", "array_id"])
         .copy()
     )
     if len(trainable) < 50:

@@ -96,14 +96,14 @@ def build_overall_prediction_view(submission_df: pd.DataFrame, grain: str) -> pd
     predictions["prediction_date"] = pd.to_datetime(predictions["prediction_date"])
 
     if grain == "Daily":
-        daily_view = predictions.sort_values(["prediction_date", "plant_id", "array_id"]).copy()
+        daily_view = predictions.sort_values(["prediction_date", "panel_id", "array_id"]).copy()
         daily_view.insert(0, "prediction_grain", "daily")
         daily_view["prediction_date"] = daily_view["prediction_date"].dt.strftime("%Y-%m-%d")
         return daily_view
 
     predictions["prediction_month"] = predictions["prediction_date"].dt.to_period("M").astype(str)
     monthly_view = (
-        predictions.groupby(["prediction_month", "plant_id", "plant_number", "selected_model"], as_index=False)
+        predictions.groupby(["prediction_month", "panel_id", "panel_number", "selected_model"], as_index=False)
         .agg(
             array_count=("array_id", "nunique"),
             total_prior_day_output_kwh=("prior_day_output_kwh", "sum"),
@@ -117,7 +117,7 @@ def build_overall_prediction_view(submission_df: pd.DataFrame, grain: str) -> pd
             maintenance_flag_count=("maintenance_flag", "sum"),
             avg_maintenance_priority_score=("maintenance_priority_score", "mean"),
         )
-        .sort_values(["prediction_month", "plant_id"])
+        .sort_values(["prediction_month", "panel_id"])
     )
     monthly_view.insert(0, "prediction_grain", "monthly")
     return monthly_view
@@ -135,15 +135,14 @@ best_model_name = str(metrics.sort_values("rmse").iloc[0]["model"])
 
 with st.sidebar:
     st.header("Prediction setup")
-    array_options = (
-        daily[["plant_id", "array_id"]]
+    panel_id_col = "panel_id"
+    panel_options = (
+        daily[[panel_id_col, "array_id"]]
         .drop_duplicates()
-        .sort_values(["plant_id", "array_id"])
+        .sort_values([panel_id_col, "array_id"])
         .itertuples(index=False, name=None)
     )
-    panel_id_col = "panel_id" if "panel_id" in daily.columns else "plant_id"
-    panel_options = daily[[panel_id_col, "array_id"]].drop_duplicates().sort_values([panel_id_col, "array_id"]).itertuples(index=False, name=None)
-    selected_plant, selected_array = st.selectbox(
+    selected_panel, selected_array = st.selectbox(
         "Panel and array",
         list(panel_options),
         format_func=lambda value: f"{value[0]} | {value[1]}",
@@ -159,7 +158,7 @@ with st.sidebar:
     )
 
 array_history = daily[
-    (daily["plant_id"] == selected_plant) & (daily["array_id"] == selected_array)
+    (daily["panel_id"] == selected_panel) & (daily["array_id"] == selected_array)
 ].sort_values("date")
 latest = array_history.iloc[-1].copy()
 default_prediction_date = latest["date"] + pd.Timedelta(days=1)
@@ -286,7 +285,7 @@ if submitted:
         "predictions": predictions,
         "prior_day_output": prior_day_output,
         "array_id": selected_array,
-        "plant_id": selected_plant,
+        "panel_id": selected_panel,
     }
 
 latest_prediction = st.session_state.get("latest_prediction")
@@ -310,25 +309,24 @@ with st.container(horizontal=True):
     )
     st.metric(
         "Selected array",
-        f"{selected_plant} | {selected_array}",
+        f"{selected_panel} | {selected_array}",
         border=True,
     )
 
-damage_id_column = "panel_id" if "panel_id" in damaged_panels.columns else "plant_id"
 selected_damage = damaged_panels[
-    (damaged_panels[damage_id_column] == selected_plant)
+    (damaged_panels["panel_id"] == selected_panel)
     & (damaged_panels["array_id"] == selected_array)
 ]
 
 with st.container(border=True):
     st.subheader("Panel health check")
     if selected_damage.empty:
-        st.success(f"No likely damaged panel detected for Panel {selected_plant} | Array {selected_array}.")
+        st.success(f"No likely damaged panel detected for Panel {selected_panel} | Array {selected_array}.")
     else:
         damaged_row = selected_damage.iloc[0]
         st.warning(
             "Likely damaged panel detected: "
-            f"Panel {selected_plant} | Array {selected_array} | "
+            f"Panel {selected_panel} | Array {selected_array} | "
             f"Last flagged {pd.to_datetime(damaged_row['last_detected_date']).strftime('%Y-%m-%d')} | "
             f"Priority score {float(damaged_row['maintenance_priority_score']):.0f}/100"
         )
