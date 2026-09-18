@@ -141,9 +141,11 @@ with st.sidebar:
         .sort_values(["plant_id", "array_id"])
         .itertuples(index=False, name=None)
     )
+    panel_id_col = "panel_id" if "panel_id" in daily.columns else "plant_id"
+    panel_options = daily[[panel_id_col, "array_id"]].drop_duplicates().sort_values([panel_id_col, "array_id"]).itertuples(index=False, name=None)
     selected_plant, selected_array = st.selectbox(
-        "Plant and array",
-        list(array_options),
+        "Panel and array",
+        list(panel_options),
         format_func=lambda value: f"{value[0]} | {value[1]}",
     )
     model_choice = st.segmented_control(
@@ -312,19 +314,21 @@ with st.container(horizontal=True):
         border=True,
     )
 
+damage_id_column = "panel_id" if "panel_id" in damaged_panels.columns else "plant_id"
 selected_damage = damaged_panels[
-    (damaged_panels["plant_id"] == selected_plant) & (damaged_panels["array_id"] == selected_array)
+    (damaged_panels[damage_id_column] == selected_plant)
+    & (damaged_panels["array_id"] == selected_array)
 ]
 
 with st.container(border=True):
     st.subheader("Panel health check")
     if selected_damage.empty:
-        st.success(f"No likely damaged panel detected for Plant {selected_plant} | Array {selected_array}.")
+        st.success(f"No likely damaged panel detected for Panel {selected_plant} | Array {selected_array}.")
     else:
         damaged_row = selected_damage.iloc[0]
         st.warning(
             "Likely damaged panel detected: "
-            f"Plant {selected_plant} | Array {selected_array} | "
+            f"Panel {selected_plant} | Array {selected_array} | "
             f"Last flagged {pd.to_datetime(damaged_row['last_detected_date']).strftime('%Y-%m-%d')} | "
             f"Priority score {float(damaged_row['maintenance_priority_score']):.0f}/100"
         )

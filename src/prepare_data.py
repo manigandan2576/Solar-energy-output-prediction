@@ -144,14 +144,16 @@ def build_array_daily_dataset() -> pd.DataFrame:
         )
         .rename(columns={"PLANT_ID": "plant_id", "SOURCE_KEY": "array_id"})
     )
+    daily["panel_id"] = daily["plant_id"]
 
     return _add_problem_features(daily)
 
 
 def identify_damaged_panels(daily: pd.DataFrame) -> pd.DataFrame:
     """Return the most recent array-level panel flags that look damaged."""
+    identifier_name = "panel_id" if "panel_id" in daily.columns else "plant_id"
     required_columns = [
-        "plant_id",
+        identifier_name,
         "array_id",
         "date",
         "maintenance_flag",
@@ -167,7 +169,7 @@ def identify_damaged_panels(daily: pd.DataFrame) -> pd.DataFrame:
     if flagged.empty:
         return pd.DataFrame(
             columns=[
-                "plant_id",
+                "panel_id",
                 "array_id",
                 "last_detected_date",
                 "maintenance_priority_score",
@@ -178,14 +180,16 @@ def identify_damaged_panels(daily: pd.DataFrame) -> pd.DataFrame:
         )
 
     flagged["date"] = pd.to_datetime(flagged["date"])
-    flagged = flagged.sort_values(["plant_id", "array_id", "date"], ascending=[True, True, False])
-    latest = flagged.drop_duplicates(subset=["plant_id", "array_id"], keep="first").copy()
+    flagged = flagged.sort_values([identifier_name, "array_id", "date"], ascending=[True, True, False])
+    latest = flagged.drop_duplicates(subset=[identifier_name, "array_id"], keep="first").copy()
     latest = latest.rename(columns={"date": "last_detected_date"})
+    if "plant_id" in latest.columns and "panel_id" not in latest.columns:
+        latest = latest.rename(columns={"plant_id": "panel_id"})
     latest["issue"] = "Likely damaged panel"
     latest["maintenance_priority_score"] = latest["maintenance_priority_score"].clip(lower=0, upper=100)
     return latest[
         [
-            "plant_id",
+            "panel_id",
             "array_id",
             "last_detected_date",
             "maintenance_priority_score",

@@ -49,6 +49,7 @@ def make_predictions() -> pd.DataFrame:
     output = latest_rows[
         [
             "plant_id",
+            "panel_id",
             "plant_number",
             "array_id",
             "prediction_date",
@@ -75,7 +76,8 @@ def make_predictions() -> pd.DataFrame:
     output["selected_model"] = best_model
     output["predicted_next_day_output_kwh"] = output[f"{best_model}_prediction_kwh"]
     output["prediction_date"] = output["prediction_date"].dt.strftime("%Y-%m-%d")
-    return output.sort_values(["plant_id", "array_id"]).reset_index(drop=True)
+    output["panel_id"] = output["plant_id"]
+    return output.sort_values(["panel_id", "array_id"]).reset_index(drop=True)
 
 
 def main() -> None:
