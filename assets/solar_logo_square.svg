@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Solar panel square logo">
+  <rect width="512" height="512" rx="40" fill="#f2f8ff"/>
+  <rect x="54" y="54" width="404" height="404" rx="26" fill="#0f172a"/>
+
+  <circle cx="256" cy="182" r="64" fill="#f4b942"/>
+  <g stroke="#f4b942" stroke-width="8" stroke-linecap="round">
+    <line x1="256" y1="74" x2="256" y2="108"/>
+    <line x1="256" y1="256" x2="256" y2="290"/>
+    <line x1="148" y1="182" x2="182" y2="182"/>
+    <line x1="330" y1="182" x2="364" y2="182"/>
+    <line x1="182" y1="106" x2="200" y2="124"/>
+    <line x1="312" y1="236" x2="330" y2="254"/>
+    <line x1="182" y1="258" x2="200" y2="240"/>
+    <line x1="312" y1="128" x2="330" y2="110"/>
+  </g>
+
+  <g transform="translate(130 270)">
+    <rect x="0" y="0" width="252" height="132" rx="18" fill="#1d4ed8"/>
+    <g stroke="#dbeafe" stroke-width="6">
+      <line x1="36" y1="0" x2="36" y2="132"/>
+      <line x1="86" y1="0" x2="86" y2="132"/>
+      <line x1="136" y1="0" x2="136" y2="132"/>
+      <line x1="186" y1="0" x2="186" y2="132"/>
+      <line x1="236" y1="0" x2="236" y2="132"/>
+      <line x1="0" y1="40" x2="252" y2="40"/>
+      <line x1="0" y1="82" x2="252" y2="82"/>
+    </g>
+  </g>
+</svg>
